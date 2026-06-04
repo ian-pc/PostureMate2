@@ -4,55 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PostureMate</title>
+  <!-- Apply dark mode before first paint to avoid flash -->
   <script>
-    if (localStorage.getItem('pm_dark') === '1') document.documentElement.classList.add('dark');
+    (function() {
+      const stored = localStorage.getItem('pm_dark');
+      const sys    = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (stored === '1' || (stored === null && sys)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
   </script>
   <style>
     /* ===== RESET ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     button { font-family: inherit; cursor: pointer; border: none; background: none; }
-    input[type=range] { cursor: pointer; }
 
     /* ===== CSS VARIABLES ===== */
     :root {
-      --bg:         #F0F4F8;
-      --card:       #FFFFFF;
-      --card-2:     #F8FAFC;
-      --accent:     #14B8A6;
-      --accent-h:   #0D9488;
-      --text:       #0F172A;
-      --text-2:     #475569;
-      --text-3:     #94A3B8;
-      --border:     #E2E8F0;
-      --shadow:     0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
-      --shadow-md:  0 4px 14px rgba(0,0,0,.08);
-      --radius:     10px;
-      --radius-sm:  6px;
-      --radius-lg:  16px;
-      --good:       #22C55E;
-      --bad:        #EF4444;
-      --good-bg:    #F0FDF4;
-      --good-text:  #15803D;
-      --bad-bg:     #FEF2F2;
-      --bad-text:   #DC2626;
-      --titlebar-h: 38px;
-      --font:       -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      --ease:       cubic-bezier(.4,0,.2,1);
+      --bg:        #F0F4F8;
+      --card:      #FFFFFF;
+      --card-2:    #F8FAFC;
+      --accent:    #14B8A6;
+      --accent-h:  #0D9488;
+      --text:      #0F172A;
+      --text-2:    #475569;
+      --text-3:    #94A3B8;
+      --border:    #E2E8F0;
+      --shadow:    0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+      --radius:    10px;
+      --radius-sm: 6px;
+      --radius-lg: 16px;
+      --good:      #22C55E;
+      --bad:       #EF4444;
+      --good-bg:   #F0FDF4;
+      --good-text: #15803D;
+      --bad-bg:    #FEF2F2;
+      --bad-text:  #DC2626;
+      --tb-h:      38px;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --ease:      cubic-bezier(.4,0,.2,1);
     }
     html.dark {
-      --bg:        #0D1117;
-      --card:      #161B22;
-      --card-2:    #0D1117;
-      --text:      #E6EDF3;
-      --text-2:    #8B949E;
-      --text-3:    #484F58;
-      --border:    #30363D;
-      --shadow:    0 1px 3px rgba(0,0,0,.4);
-      --shadow-md: 0 4px 14px rgba(0,0,0,.5);
-      --good-bg:   #0D2818;
-      --good-text: #4ADE80;
-      --bad-bg:    #2D0707;
-      --bad-text:  #F87171;
+      --bg:       #0D1117;
+      --card:     #161B22;
+      --card-2:   #0D1117;
+      --text:     #E6EDF3;
+      --text-2:   #8B949E;
+      --text-3:   #484F58;
+      --border:   #30363D;
+      --shadow:   0 1px 3px rgba(0,0,0,.4);
+      --shadow-md:0 4px 16px rgba(0,0,0,.55);
+      --good-bg:  #0D2818;
+      --good-text:#4ADE80;
+      --bad-bg:   #2D0707;
+      --bad-text: #F87171;
     }
 
     /* ===== BASE ===== */
@@ -70,7 +76,7 @@
     .titlebar {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: var(--titlebar-h);
+      height: var(--tb-h);
       background: var(--card);
       border-bottom: 1px solid var(--border);
       display: flex;
@@ -81,20 +87,19 @@
     .titlebar-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 0 14px;
+      gap: 9px;
+      padding: 0 16px;
       flex: 1;
     }
     .titlebar-brand img {
-      width: 20px;
-      height: 20px;
+      width: 20px; height: 20px;
       object-fit: contain;
-      border-radius: 4px;
+      border-radius: 5px;
     }
     .titlebar-brand span {
       font-size: 13px;
       font-weight: 600;
-      letter-spacing: -0.2px;
+      letter-spacing: -.2px;
       color: var(--text);
     }
     .titlebar-controls {
@@ -103,7 +108,7 @@
     }
     .win-btn {
       width: 46px;
-      height: var(--titlebar-h);
+      height: var(--tb-h);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -117,8 +122,7 @@
     /* ===== SCREEN SYSTEM ===== */
     .screen-wrap {
       position: fixed;
-      top: var(--titlebar-h);
-      left: 0; right: 0; bottom: 0;
+      top: var(--tb-h); left: 0; right: 0; bottom: 0;
       overflow: hidden;
     }
     .screen {
@@ -129,10 +133,7 @@
       transition: opacity .4s var(--ease);
       overflow-y: auto;
     }
-    .screen.active {
-      opacity: 1;
-      pointer-events: all;
-    }
+    .screen.active { opacity: 1; pointer-events: all; }
 
     /* ===== LOADING SCREEN ===== */
     #scr-loading {
@@ -141,41 +142,38 @@
       align-items: center;
       justify-content: center;
       background: var(--bg);
-      gap: 0;
     }
     .load-icon {
-      width: 72px;
-      height: 72px;
-      border-radius: 18px;
+      width: 80px; height: 80px;
+      border-radius: 20px;
       object-fit: contain;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       opacity: 0;
       animation: fadeUp .5s var(--ease) .2s forwards;
     }
     .load-title {
-      font-size: 26px;
+      font-size: 30px;
       font-weight: 700;
-      letter-spacing: -0.5px;
-      color: var(--text);
+      letter-spacing: -.5px;
       opacity: 0;
-      animation: fadeUp .5s var(--ease) .4s forwards;
+      animation: fadeUp .5s var(--ease) .45s forwards;
     }
     .load-welcome {
-      margin-top: 10px;
-      font-size: 15px;
+      margin-top: 12px;
+      font-size: 16px;
       color: var(--text-2);
       opacity: 0;
-      animation: fadeUp .5s var(--ease) .7s forwards;
+      animation: fadeUp .5s var(--ease) .75s forwards;
     }
     .load-dots {
-      margin-top: 28px;
+      margin-top: 32px;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       opacity: 0;
-      animation: fadeIn .4s var(--ease) 1.1s forwards;
+      animation: fadeIn .4s var(--ease) 1.2s forwards;
     }
     .load-dot {
-      width: 8px; height: 8px;
+      width: 9px; height: 9px;
       border-radius: 50%;
       background: var(--accent);
       animation: dotPulse 1.4s ease-in-out infinite;
@@ -186,96 +184,64 @@
     /* ===== ONBOARDING SCREEN ===== */
     #scr-onboarding {
       background: var(--bg);
-      padding: 36px 48px 40px;
+      padding: 40px 52px 44px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .ob-header {
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 36px;
     }
-    .ob-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-    .ob-header p {
-      margin-top: 6px;
-      font-size: 15px;
-      color: var(--text-2);
-    }
+    .ob-header h1 { font-size: 30px; font-weight: 700; letter-spacing: -.5px; }
+    .ob-header p  { margin-top: 8px; font-size: 16px; color: var(--text-2); }
     .ob-benefits {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
+      gap: 16px;
       width: 100%;
-      max-width: 720px;
-      margin-bottom: 20px;
+      max-width: 780px;
+      margin-bottom: 22px;
     }
     .ob-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 22px 20px;
+      padding: 26px 22px;
       box-shadow: var(--shadow);
     }
-    .ob-card-emoji {
-      font-size: 28px;
-      margin-bottom: 12px;
-      display: block;
-    }
-    .ob-card h3 {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .ob-card p {
-      font-size: 13px;
-      color: var(--text-2);
-      line-height: 1.55;
-    }
+    .ob-card-emoji { font-size: 30px; margin-bottom: 14px; display: block; }
+    .ob-card h3    { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+    .ob-card p     { font-size: 13px; color: var(--text-2); line-height: 1.6; }
     .ob-footer-cards {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      gap: 16px;
       width: 100%;
-      max-width: 720px;
-      margin-bottom: 28px;
+      max-width: 780px;
+      margin-bottom: 32px;
     }
     .ob-info-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 16px 18px;
+      padding: 18px 20px;
       box-shadow: var(--shadow);
     }
-    .ob-info-card .ob-info-label {
-      font-size: 12px;
+    .ob-info-label {
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-3);
       text-transform: uppercase;
       letter-spacing: .6px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
-    .ob-info-card p {
-      font-size: 13px;
-      color: var(--text-2);
-      line-height: 1.55;
-    }
-    .ob-creators {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
+    .ob-info-card p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+    .ob-creators { display: flex; gap: 12px; margin-top: 10px; }
     .ob-creator-link {
       font-size: 13px;
       color: var(--accent);
-      text-decoration: none;
       font-weight: 500;
-      background: none;
-      border: none;
-      cursor: pointer;
       padding: 0;
     }
     .ob-creator-link:hover { text-decoration: underline; }
@@ -284,10 +250,9 @@
       color: #fff;
       font-size: 15px;
       font-weight: 600;
-      padding: 12px 40px;
+      padding: 13px 44px;
       border-radius: var(--radius);
       transition: background .18s var(--ease), transform .12s var(--ease);
-      letter-spacing: -0.1px;
     }
     .ob-next-btn:hover { background: var(--accent-h); transform: translateY(-1px); }
     .ob-next-btn:active { transform: translateY(0); }
@@ -299,52 +264,34 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 32px 48px;
-      gap: 0;
+      padding: 32px;
     }
-    .cal-icon {
-      width: 52px; height: 52px;
-      border-radius: 12px;
-      object-fit: contain;
-      margin-bottom: 16px;
-    }
-    .cal-title {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      margin-bottom: 6px;
-    }
-    .cal-subtitle {
-      font-size: 14px;
-      color: var(--text-2);
-      margin-bottom: 28px;
-    }
-    .cal-camera-wrap {
+    .cal-icon  { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; margin-bottom: 18px; }
+    .cal-title { font-size: 24px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 8px; }
+    .cal-sub   { font-size: 14px; color: var(--text-2); margin-bottom: 30px; }
+    .cal-cam-wrap {
       position: relative;
-      width: 380px;
+      width: 400px;
       aspect-ratio: 4/3;
       background: #000;
       border-radius: var(--radius-lg);
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       box-shadow: var(--shadow-md);
     }
-    .cal-camera-wrap video,
-    .cal-camera-wrap canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+    .cal-cam-wrap video,
+    .cal-cam-wrap canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
       object-fit: cover;
       transform: scaleX(-1);
     }
     .cal-progress-bar {
-      width: 380px;
-      height: 4px;
+      width: 400px; height: 4px;
       background: var(--border);
       border-radius: 2px;
       overflow: hidden;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .cal-progress-fill {
       height: 100%;
@@ -353,46 +300,40 @@
       transition: width .2s var(--ease);
       width: 0%;
     }
-    .cal-status {
-      font-size: 13px;
-      color: var(--text-2);
-      margin-bottom: 20px;
-      min-height: 18px;
-    }
+    .cal-status { font-size: 13px; color: var(--text-2); margin-bottom: 22px; min-height: 18px; }
     .cal-btn {
-      background: var(--accent);
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      padding: 12px 40px;
+      background: var(--accent); color: #fff;
+      font-size: 15px; font-weight: 600;
+      padding: 12px 44px;
       border-radius: var(--radius);
       transition: background .18s var(--ease), opacity .18s var(--ease);
     }
     .cal-btn:hover:not(:disabled) { background: var(--accent-h); }
-    .cal-btn:disabled { opacity: .5; cursor: default; }
+    .cal-btn:disabled { opacity: .45; cursor: default; }
 
     /* ===== HOME SCREEN ===== */
     #scr-home {
       background: var(--bg);
       display: flex;
       flex-direction: column;
-      padding: 16px 18px 14px;
+      padding: 20px 22px 16px;
       gap: 14px;
       min-height: 100%;
+      overflow: hidden;
     }
     .home-main {
       display: flex;
-      gap: 14px;
+      gap: 16px;
       flex: 1;
       min-height: 0;
     }
 
-    /* camera column */
+    /* Camera column */
     .cam-col {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      flex: 0 0 calc(58% - 7px);
+      gap: 12px;
+      flex: 0 0 calc(57% - 8px);
     }
     .cam-wrap {
       position: relative;
@@ -404,87 +345,96 @@
       box-shadow: var(--shadow-md);
       flex-shrink: 0;
     }
-    .cam-wrap video { width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block; }
+    .cam-wrap video  { width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block; }
     .cam-wrap canvas { position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1); }
-    .cam-overlay-badge {
-      position: absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 6px 18px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      backdrop-filter: blur(8px);
-      display: none;
-      white-space: nowrap;
-      transition: opacity .3s var(--ease);
-    }
-    .cam-overlay-badge.bad  { background: rgba(239,68,68,.85); color:#fff; display:block; }
-    .cam-overlay-badge.good { background: rgba(34,197,94,.85); color:#fff; display:block; }
     .cam-status-strip {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      top: 10px; left: 10px; right: 10px;
     }
     .cam-status-text {
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,.8);
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,.85);
       background: rgba(0,0,0,.45);
       backdrop-filter: blur(6px);
-      padding: 4px 10px;
+      padding: 4px 11px;
       border-radius: 999px;
+      display: inline-block;
     }
+    .cam-overlay-badge {
+      position: absolute;
+      bottom: 14px; left: 50%; transform: translateX(-50%);
+      padding: 7px 20px;
+      border-radius: 999px;
+      font-size: 13px; font-weight: 600;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+      display: none;
+    }
+    .cam-overlay-badge.bad  { background: rgba(239,68,68,.88);  color:#fff; display:block; }
+    .cam-overlay-badge.good { background: rgba(34,197,94,.88);  color:#fff; display:block; }
 
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
     .metric-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 10px 12px;
+      padding: 12px 14px;
       box-shadow: var(--shadow);
     }
-    .metric-label { font-size: 11px; color: var(--text-3); margin-bottom: 4px; font-weight: 500; }
+    .metric-label { font-size: 11px; color: var(--text-3); margin-bottom: 5px; font-weight: 500; }
     .metric-value { font-size: 16px; font-weight: 600; color: var(--text); }
     .metric-value.good { color: var(--good-text); }
     .metric-value.bad  { color: var(--bad-text);  }
 
     .cam-controls {
       display: flex;
-      gap: 8px;
+      gap: 10px;
+      align-items: center;
     }
     .ctrl-btn {
       flex: 1;
-      padding: 9px 0;
-      font-size: 13px;
-      font-weight: 500;
+      padding: 10px 0;
+      font-size: 13px; font-weight: 500;
       border-radius: var(--radius-sm);
       background: var(--card);
       border: 1px solid var(--border);
       color: var(--text);
       box-shadow: var(--shadow);
-      transition: background .15s var(--ease), border-color .15s var(--ease);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      transition: background .15s var(--ease);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
     .ctrl-btn:hover { background: var(--bg); }
     .ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .ctrl-btn.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
-    .ctrl-btn.danger { color: var(--bad-text); border-color: var(--bad-text); }
-    .ctrl-btn.danger:hover { background: var(--bad-bg); }
 
-    /* panel column */
+    .sens-wrap {
+      display: flex; align-items: center; gap: 8px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .sens-label { font-size: 12px; color: var(--text-2); white-space: nowrap; }
+    input[type=range].sens-slider {
+      -webkit-appearance: none;
+      width: 88px; height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      -webkit-app-region: no-drag;
+    }
+    input[type=range].sens-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .sens-val { font-size: 12px; color: var(--text-3); min-width: 14px; }
+
+    /* Panel column */
     .panel-col {
       flex: 1;
       display: flex;
@@ -498,15 +448,14 @@
     .panel-nav {
       display: flex;
       align-items: center;
-      padding: 10px 14px 0;
-      gap: 8px;
+      padding: 12px 16px 0;
+      gap: 10px;
     }
     .panel-nav-arrow {
       width: 28px; height: 28px;
       border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: center;
-      color: var(--text-2);
-      font-size: 14px;
+      color: var(--text-2); font-size: 16px;
       background: var(--card-2);
       border: 1px solid var(--border);
       transition: background .15s var(--ease);
@@ -514,192 +463,124 @@
     .panel-nav-arrow:hover { background: var(--bg); }
     .panel-tab-dots {
       flex: 1;
-      display: flex;
-      justify-content: center;
-      gap: 6px;
+      display: flex; justify-content: center;
+      gap: 7px;
     }
     .tab-dot {
-      width: 6px; height: 6px;
+      width: 7px; height: 7px;
       border-radius: 50%;
       background: var(--border);
-      transition: background .2s var(--ease), transform .2s var(--ease);
       cursor: pointer;
+      transition: background .2s var(--ease), transform .2s var(--ease);
     }
-    .tab-dot.active {
-      background: var(--accent);
-      transform: scale(1.3);
-    }
+    .tab-dot.active { background: var(--accent); transform: scale(1.3); }
+
     .panel-tabs {
       flex: 1;
-      overflow: hidden;
       position: relative;
+      overflow: hidden;
     }
     .panel-tab {
-      position: absolute;
-      inset: 0;
-      padding: 16px 16px;
+      position: absolute; inset: 0;
+      padding: 18px 20px 16px;
       opacity: 0;
       pointer-events: none;
       transition: opacity .25s var(--ease);
-      overflow-y: auto;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
-    .panel-tab.active {
-      opacity: 1;
-      pointer-events: all;
-    }
+    .panel-tab.active { opacity: 1; pointer-events: all; }
     .tab-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .7px;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .7px;
       color: var(--text-3);
-      margin-bottom: 14px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
     }
 
     /* ===== POMODORO TAB ===== */
     .pom-setup {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-    }
-    .pom-times {
-      display: flex;
-      gap: 20px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 18px;
       width: 100%;
     }
+    .pom-times { display: flex; gap: 16px; width: 100%; }
     .pom-time-block {
       flex: 1;
       background: var(--card-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+      padding: 14px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
     }
     .pom-time-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .6px;
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px;
       color: var(--text-3);
     }
-    .pom-hms {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-    }
-    .pom-seg {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-    }
+    .pom-hms { display: flex; align-items: center; gap: 2px; }
+    .pom-seg { display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .pom-seg-btn {
-      width: 26px; height: 18px;
-      border-radius: 4px;
-      font-size: 11px;
+      width: 28px; height: 20px;
+      border-radius: 4px; font-size: 11px;
       color: var(--text-2);
       background: var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
       transition: background .12s var(--ease);
     }
     .pom-seg-btn:hover { background: var(--accent); color: #fff; }
     .pom-seg input {
-      width: 32px;
+      width: 34px;
       text-align: center;
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 19px; font-weight: 700;
       color: var(--text);
-      background: none;
-      border: none;
-      outline: none;
+      background: none; border: none; outline: none;
       font-family: inherit;
       -webkit-app-region: no-drag;
     }
     .pom-colon {
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 19px; font-weight: 700;
       color: var(--text-3);
-      margin: 0 1px;
-      line-height: 1;
-      padding-top: 18px;
+      margin: 0 1px; line-height: 1;
+      padding-top: 20px;
     }
     .pom-start-btn {
-      width: 100%;
-      padding: 11px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 14px;
-      font-weight: 600;
+      width: 100%; padding: 12px;
+      background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 600;
       border-radius: var(--radius);
       transition: background .15s var(--ease);
     }
     .pom-start-btn:hover { background: var(--accent-h); }
 
     .pom-running {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-    }
-    .pom-mode-badge {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .8px;
-      padding: 4px 12px;
-      border-radius: 999px;
-    }
-    .pom-mode-badge.work { background: var(--bad-bg); color: var(--bad-text); }
-    .pom-mode-badge.rest { background: var(--good-bg); color: var(--good-text); }
-    .pom-circle-wrap {
-      position: relative;
-      width: 130px; height: 130px;
-    }
-    .pom-circle-wrap svg {
-      transform: rotate(-90deg);
-    }
-    .pom-circle-bg {
-      fill: none;
-      stroke: var(--border);
-      stroke-width: 8;
-    }
-    .pom-circle-fg {
-      fill: none;
-      stroke-width: 8;
-      stroke-linecap: round;
-      transition: stroke-dashoffset .9s var(--ease);
-    }
-    .pom-circle-time {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .pom-countdown {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      color: var(--text);
-    }
-    .pom-run-controls {
-      display: flex;
-      gap: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 16px;
       width: 100%;
     }
+    .pom-mode-badge {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .8px;
+      padding: 5px 14px; border-radius: 999px;
+    }
+    .pom-mode-badge.work { background: var(--bad-bg);  color: var(--bad-text);  }
+    .pom-mode-badge.rest { background: var(--good-bg); color: var(--good-text); }
+    .pom-circle-wrap { position: relative; width: 138px; height: 138px; }
+    .pom-circle-wrap svg { transform: rotate(-90deg); }
+    .pom-circle-bg  { fill: none; stroke: var(--border); stroke-width: 9; }
+    .pom-circle-fg  { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset .9s var(--ease); }
+    .pom-circle-time {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .pom-countdown { font-size: 22px; font-weight: 700; letter-spacing: -.5px; }
+    .pom-run-controls { display: flex; gap: 10px; width: 100%; }
     .pom-run-btn {
-      flex: 1;
-      padding: 9px 0;
-      font-size: 13px;
-      font-weight: 500;
+      flex: 1; padding: 10px 0;
+      font-size: 13px; font-weight: 500;
       border-radius: var(--radius-sm);
       background: var(--card-2);
       border: 1px solid var(--border);
@@ -711,179 +592,88 @@
     .pom-run-btn.accent:hover { background: var(--accent-h); }
 
     /* ===== STATS TAB ===== */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .stat-card {
       background: var(--card-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 16px 16px;
     }
     .stat-card.full { grid-column: span 2; }
-    .stat-icon { font-size: 20px; margin-bottom: 6px; }
-    .stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.5px;
-      margin-bottom: 2px;
-    }
-    .stat-label {
-      font-size: 12px;
-      color: var(--text-2);
-      font-weight: 500;
-    }
+    .stat-icon  { font-size: 22px; margin-bottom: 8px; }
+    .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 3px; }
+    .stat-label { font-size: 12px; color: var(--text-2); font-weight: 500; }
 
     /* ===== QUOTE TAB ===== */
     .quote-body {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      justify-content: center;
-      gap: 8px;
-      padding: 10px 0;
+      display: flex; flex-direction: column;
+      gap: 10px;
     }
-    .quote-mark {
-      font-size: 60px;
-      line-height: .8;
-      color: var(--accent);
-      font-family: Georgia, serif;
-      font-weight: 700;
-    }
-    .quote-text {
-      font-size: 16px;
-      font-style: italic;
-      color: var(--text);
-      line-height: 1.6;
-      font-weight: 500;
-    }
-    .quote-author {
-      font-size: 13px;
-      color: var(--text-2);
-      font-weight: 600;
-      margin-top: 4px;
-    }
-    .quote-date {
-      font-size: 11px;
-      color: var(--text-3);
-      margin-top: 12px;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-    }
+    .quote-mark  { font-size: 72px; line-height: .75; color: var(--accent); font-family: Georgia, serif; font-weight: 700; }
+    .quote-text  { font-size: 18px; font-style: italic; color: var(--text); line-height: 1.65; font-weight: 500; }
+    .quote-author{ font-size: 14px; color: var(--text-2); font-weight: 600; margin-top: 6px; }
+    .quote-date  { font-size: 11px; color: var(--text-3); margin-top: 14px; text-transform: uppercase; letter-spacing: .5px; }
 
     /* ===== SETTINGS BAR ===== */
     .settings-bar {
-      display: flex;
-      align-items: center;
-      gap: 0;
+      display: flex; align-items: center; gap: 0;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 8px 14px;
+      padding: 10px 18px;
       box-shadow: var(--shadow);
-      flex-wrap: wrap;
-      row-gap: 6px;
-    }
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding-right: 20px;
-    }
-    .toggle-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-2);
-      white-space: nowrap;
-    }
-    .toggle {
-      position: relative;
-      width: 36px;
-      height: 20px;
       flex-shrink: 0;
     }
+    .toggle-row {
+      display: flex; align-items: center; gap: 9px;
+      padding-right: 24px;
+    }
+    .toggle-label { font-size: 12px; font-weight: 500; color: var(--text-2); white-space: nowrap; }
+    .toggle { position: relative; width: 38px; height: 21px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
     .toggle-track {
-      position: absolute;
-      inset: 0;
-      background: var(--border);
-      border-radius: 999px;
-      transition: background .2s var(--ease);
-      cursor: pointer;
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: 999px;
+      transition: background .2s var(--ease); cursor: pointer;
     }
     .toggle-thumb {
       position: absolute;
       top: 3px; left: 3px;
-      width: 14px; height: 14px;
-      background: #fff;
-      border-radius: 50%;
+      width: 15px; height: 15px;
+      background: #fff; border-radius: 50%;
       transition: transform .2s var(--ease);
       pointer-events: none;
       box-shadow: 0 1px 3px rgba(0,0,0,.2);
     }
     .toggle input:checked ~ .toggle-track { background: var(--accent); }
-    .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
-    .settings-sep {
-      width: 1px;
-      height: 18px;
-      background: var(--border);
-      margin-right: 20px;
-    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(17px); }
+    .settings-sep { width: 1px; height: 20px; background: var(--border); margin-right: 24px; flex-shrink: 0; }
     .privacy-note {
       margin-left: auto;
-      font-size: 11px;
-      color: var(--text-3);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* sensitivity slider */
-    .sens-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    input[type=range].sens-slider {
-      -webkit-appearance: none;
-      width: 80px;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--border);
-      outline: none;
-    }
-    input[type=range].sens-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
+      font-size: 11px; color: var(--text-3);
+      display: flex; align-items: center; gap: 5px;
     }
 
     /* ===== ANIMATIONS ===== */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(14px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+      from { opacity: 0; } to { opacity: 1; }
     }
     @keyframes dotPulse {
-      0%, 100% { opacity: .25; transform: scale(.85); }
-      50%       { opacity: 1;   transform: scale(1); }
+      0%, 100% { opacity: .2; transform: scale(.82); }
+      50%       { opacity: 1; transform: scale(1); }
     }
   </style>
 </head>
 <body>
 
-<!-- TITLEBAR (always visible) -->
+<!-- TITLEBAR -->
 <div class="titlebar">
   <div class="titlebar-brand">
-    <img src="./assets/icon.png" alt="PostureMate" onerror="this.style.display='none'">
+    <img src="./assets/icon.png" alt="" onerror="this.style.display='none'">
     <span>PostureMate</span>
   </div>
   <div class="titlebar-controls">
@@ -892,10 +682,10 @@
   </div>
 </div>
 
-<!-- SCREEN CONTAINER -->
+<!-- SCREENS -->
 <div class="screen-wrap">
 
-  <!-- LOADING SCREEN -->
+  <!-- LOADING -->
   <div id="scr-loading" class="screen active">
     <img src="./assets/icon.png" class="load-icon" alt="" onerror="this.style.display='none'">
     <div class="load-title">PostureMate</div>
@@ -907,7 +697,7 @@
     </div>
   </div>
 
-  <!-- ONBOARDING SCREEN -->
+  <!-- ONBOARDING -->
   <div id="scr-onboarding" class="screen">
     <div class="ob-header">
       <h1>Your posture coach, always watching.</h1>
@@ -917,12 +707,12 @@
       <div class="ob-card">
         <span class="ob-card-emoji">📈</span>
         <h3>Better Productivity</h3>
-        <p>Better posture keeps energy levels high and reduces the mental fatigue that comes from physical discomfort throughout the day.</p>
+        <p>Better posture keeps energy levels high and reduces the mental fatigue that comes from sitting in discomfort throughout the day.</p>
       </div>
       <div class="ob-card">
         <span class="ob-card-emoji">😴</span>
         <h3>Better Sleep</h3>
-        <p>People who spent more time in poor sleep postures scored significantly worse on sleep quality indexes.</p>
+        <p>People who spent more time in poor postures scored significantly worse on sleep quality indexes.</p>
       </div>
       <div class="ob-card">
         <span class="ob-card-emoji">🏥</span>
@@ -944,17 +734,15 @@
         </div>
       </div>
     </div>
-    <button class="ob-next-btn" onclick="showScreen('calibration'); startCalibration();">
-      Get Started &rarr;
-    </button>
+    <button class="ob-next-btn" onclick="showScreen('onboarding-to-cal')">Get Started &rarr;</button>
   </div>
 
-  <!-- CALIBRATION SCREEN -->
+  <!-- CALIBRATION -->
   <div id="scr-calibration" class="screen">
     <img src="./assets/icon.png" class="cal-icon" alt="" onerror="this.style.display='none'">
     <div class="cal-title">Let's calibrate your posture</div>
-    <div class="cal-subtitle">Sit up straight, look at the camera, then click Calibrate.</div>
-    <div class="cal-camera-wrap">
+    <div class="cal-sub">Sit up straight, look at the camera, then click Calibrate.</div>
+    <div class="cal-cam-wrap">
       <video id="cal-video" autoplay muted playsinline></video>
       <canvas id="cal-canvas"></canvas>
     </div>
@@ -963,13 +751,13 @@
     <button class="cal-btn" id="cal-btn" onclick="runCalibration()" disabled>Calibrate</button>
   </div>
 
-  <!-- HOME SCREEN -->
+  <!-- HOME -->
   <div id="scr-home" class="screen">
     <div class="home-main">
 
       <!-- Camera column -->
       <div class="cam-col">
-        <div class="cam-wrap" id="home-cam-wrap">
+        <div class="cam-wrap">
           <video id="home-video" autoplay muted playsinline></video>
           <canvas id="home-canvas"></canvas>
           <div class="cam-status-strip">
@@ -998,12 +786,12 @@
         </div>
 
         <div class="cam-controls">
-          <button class="ctrl-btn" id="btn-recal" onclick="recalibrateHome()">↺ Recalibrate</button>
+          <button class="ctrl-btn" onclick="recalibrateHome()">↺ Recalibrate</button>
           <button class="ctrl-btn primary" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
-          <div class="sens-wrap" style="margin-left:auto">
-            <span class="toggle-label">Sens</span>
-            <input type="range" class="sens-slider" id="sensitivity" min="1" max="10" value="5">
-            <span style="font-size:12px;color:var(--text-3);min-width:12px" id="sens-val">5</span>
+          <div class="sens-wrap">
+            <span class="sens-label">Sensitivity</span>
+            <input type="range" class="sens-slider" id="sensitivity" min="1" max="10" value="7">
+            <span class="sens-val" id="sens-val">7</span>
           </div>
         </div>
       </div>
@@ -1013,12 +801,13 @@
         <div class="panel-nav">
           <button class="panel-nav-arrow" onclick="cycleTab(-1)">&#8249;</button>
           <div class="panel-tab-dots">
-            <div class="tab-dot active" onclick="setTab(0)" id="dot-0"></div>
-            <div class="tab-dot" onclick="setTab(1)" id="dot-1"></div>
-            <div class="tab-dot" onclick="setTab(2)" id="dot-2"></div>
+            <div class="tab-dot active" id="dot-0" onclick="setTab(0)"></div>
+            <div class="tab-dot"        id="dot-1" onclick="setTab(1)"></div>
+            <div class="tab-dot"        id="dot-2" onclick="setTab(2)"></div>
           </div>
           <button class="panel-nav-arrow" onclick="cycleTab(1)">&#8250;</button>
         </div>
+
         <div class="panel-tabs">
 
           <!-- TAB 0: POMODORO -->
@@ -1071,18 +860,16 @@
                   </div>
                 </div>
               </div>
-              <button class="pom-start-btn" onclick="startPomodoro()">▶ Start</button>
+              <button class="pom-start-btn" onclick="startPomodoro()">▶  Start</button>
             </div>
 
             <div class="pom-running" id="pom-running" style="display:none">
               <div class="pom-mode-badge work" id="pom-mode-badge">WORK</div>
               <div class="pom-circle-wrap">
-                <svg width="130" height="130" viewBox="0 0 130 130">
-                  <circle class="pom-circle-bg" cx="65" cy="65" r="56"/>
-                  <circle class="pom-circle-fg" id="pom-circle-fg" cx="65" cy="65" r="56"
-                    stroke="var(--accent)"
-                    stroke-dasharray="351.86"
-                    stroke-dashoffset="0"/>
+                <svg width="138" height="138" viewBox="0 0 138 138">
+                  <circle class="pom-circle-bg" cx="69" cy="69" r="56"/>
+                  <circle class="pom-circle-fg" id="pom-circle-fg" cx="69" cy="69" r="56"
+                    stroke="var(--accent)" stroke-dasharray="351.86" stroke-dashoffset="0"/>
                 </svg>
                 <div class="pom-circle-time">
                   <div class="pom-countdown" id="pom-countdown">25:00</div>
@@ -1119,17 +906,17 @@
 
           <!-- TAB 2: QUOTE -->
           <div class="panel-tab" id="tab-2">
-            <div class="tab-label">Quote of the day</div>
             <div class="quote-body">
               <div class="quote-mark">"</div>
-              <div class="quote-text" id="quote-text"></div>
+              <div class="quote-text"   id="quote-text"></div>
               <div class="quote-author" id="quote-author"></div>
-              <div class="quote-date" id="quote-date"></div>
+              <div class="quote-date"   id="quote-date"></div>
             </div>
           </div>
 
-        </div><!-- /panel-tabs -->
-      </div><!-- /panel-col -->
+        </div>
+      </div>
+
     </div><!-- /home-main -->
 
     <!-- SETTINGS BAR -->
@@ -1138,8 +925,7 @@
         <span class="toggle-label">Notifications</span>
         <label class="toggle">
           <input type="checkbox" id="tog-notif" checked onchange="toggleSetting('notif', this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
         </label>
       </div>
       <div class="settings-sep"></div>
@@ -1147,8 +933,7 @@
         <span class="toggle-label">Show in bar</span>
         <label class="toggle">
           <input type="checkbox" id="tog-tray" checked onchange="toggleSetting('tray', this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
         </label>
       </div>
       <div class="settings-sep"></div>
@@ -1156,13 +941,10 @@
         <span class="toggle-label">Dark mode</span>
         <label class="toggle">
           <input type="checkbox" id="tog-dark" onchange="toggleSetting('dark', this.checked)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
         </label>
       </div>
-      <div class="privacy-note">
-        🔒 All processing is local
-      </div>
+      <div class="privacy-note">🔒 All processing is local</div>
     </div>
 
   </div><!-- /scr-home -->
@@ -1175,44 +957,43 @@
 const CALIBRATION_FRAMES = 45;
 const FIRST_ALERT_MS     = 10_000;
 const REPEAT_ALERT_MS    = 120_000;
-const CIRC               = 2 * Math.PI * 56; // ~351.86
+const CIRC               = 2 * Math.PI * 56;
 
-/* ===== GLOBAL STATE ===== */
-let poseInstance = null;
-let cameraStream = null;
-let running      = false;
-let paused       = false;
-let baseline     = null;
-let frameCount   = 0;
-let goodFrames   = 0, badFrames = 0;
+/* ===== STATE ===== */
+let poseInstance  = null;
+let cameraStream  = null;
+let running       = false;
+let paused        = false;
+let baseline      = null;
+let frameCount    = 0;
+let goodFrames    = 0, badFrames = 0;
 let currentIsGood = true;
-
-let badPostureStart  = null;
-let lastAlertTime    = null;
-
-let targetFPS   = 30;
-let lastFrameAt = 0;
-
+let badPostureStart = null, lastAlertTime = null;
+let targetFPS = 30, lastFrameAt = 0;
 let statsInterval = null;
 let todayKey = new Date().toDateString();
-let stats = loadStats();
-
-let currentTab    = 0;
-let pomState      = { mode: 'idle', isWork: true, totalSecs: 0, remaining: 0, interval: null };
+let stats    = loadStats();
+let currentTab = 0;
+let pomState = { mode: 'idle', isWork: true, totalSecs: 0, remaining: 0, interval: null };
 
 /* ===== SCREEN MANAGEMENT ===== */
 function showScreen(id) {
+  if (id === 'onboarding-to-cal') {
+    showScreen('calibration');
+    startCalibration();
+    return;
+  }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('scr-' + id);
   if (el) el.classList.add('active');
 }
 
-/* ===== APP INIT ===== */
+/* ===== INIT ===== */
 window.addEventListener('DOMContentLoaded', async () => {
   applyStoredSettings();
   showScreen('loading');
   preloadPose();
-  await sleep(2600);
+  await sleep(2700);
   if (isFirstLaunch()) {
     showScreen('onboarding');
   } else {
@@ -1223,35 +1004,31 @@ window.addEventListener('DOMContentLoaded', async () => {
   renderStats();
 });
 
-function isFirstLaunch() {
-  return !localStorage.getItem('pm_initialized');
-}
+function isFirstLaunch() { return !localStorage.getItem('pm_initialized'); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function preloadPose() {
   try {
     poseInstance = new Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
-    poseInstance.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+    poseInstance.setOptions({ modelComplexity:1, smoothLandmarks:true, minDetectionConfidence:.6, minTrackingConfidence:.6 });
     poseInstance.onResults(() => {});
-  } catch(e) { console.warn('Pose preload error:', e); }
+  } catch(e) { console.warn('Pose preload:', e); }
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-document.addEventListener('visibilitychange', () => {
-  targetFPS = document.hidden ? 3 : 30;
-});
+document.addEventListener('visibilitychange', () => { targetFPS = document.hidden ? 3 : 30; });
 
 /* ===== SETTINGS ===== */
 function applyStoredSettings() {
-  const dark  = localStorage.getItem('pm_dark')  === '1';
-  const notif = localStorage.getItem('pm_notif') !== '0';
-  const tray  = localStorage.getItem('pm_tray')  !== '0';
+  const storedDark  = localStorage.getItem('pm_dark');
+  const sysDark     = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark        = storedDark === null ? sysDark : storedDark === '1';
+  const notif       = localStorage.getItem('pm_notif') !== '0';
+  const tray        = localStorage.getItem('pm_tray')  !== '0';
 
   document.getElementById('tog-dark').checked  = dark;
   document.getElementById('tog-notif').checked = notif;
   document.getElementById('tog-tray').checked  = tray;
-
-  if (dark) document.documentElement.classList.add('dark');
+  document.documentElement.classList.toggle('dark', dark);
 
   document.getElementById('sensitivity').addEventListener('input', function() {
     document.getElementById('sens-val').textContent = this.value;
@@ -1266,148 +1043,108 @@ function toggleSetting(key, val) {
     localStorage.setItem('pm_notif', val ? '1' : '0');
   } else if (key === 'tray') {
     localStorage.setItem('pm_tray', val ? '1' : '0');
-    if (val) window.posturemate?.showTray();
-    else     window.posturemate?.hideTray();
+    val ? window.posturemate?.showTray() : window.posturemate?.hideTray();
   }
 }
 
-function openLink(url) {
-  window.posturemate?.openExternal(url);
-}
+function openLink(url) { window.posturemate?.openExternal(url); }
 
 /* ===== CALIBRATION SCREEN ===== */
-let calStream = null;
-let calPose   = null;
-let calFrameCount = 0;
-let calBaseline   = null;
-let calRunning    = false;
-const calVideo  = () => document.getElementById('cal-video');
-const calCanvas = () => document.getElementById('cal-canvas');
-const calBtn    = () => document.getElementById('cal-btn');
-const calStatus = () => document.getElementById('cal-status');
-const calProg   = () => document.getElementById('cal-progress');
+let calStream = null, calPose = null, calFrameCount = 0, calBaseline = null, calRunning = false;
 
 async function startCalibration() {
-  calStatus().textContent = 'Starting camera…';
+  document.getElementById('cal-status').textContent = 'Starting camera…';
   try {
     calStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:640, height:480 } });
-    calVideo().srcObject = calStream;
-    await calVideo().play();
-    calBtn().disabled = false;
-    calStatus().textContent = 'Sit up straight, then click Calibrate.';
+    document.getElementById('cal-video').srcObject = calStream;
+    await document.getElementById('cal-video').play();
+    document.getElementById('cal-btn').disabled = false;
+    document.getElementById('cal-status').textContent = 'Sit up straight, then click Calibrate.';
   } catch(e) {
-    calStatus().textContent = `Camera error: ${e.name} — try closing other apps using the camera.`;
-    console.error(e);
+    document.getElementById('cal-status').textContent = `Camera error: ${e.name} — close other camera apps and retry.`;
   }
 }
 
 async function runCalibration() {
-  calBtn().disabled = true;
-  calStatus().textContent = 'Calibrating… 0%';
-  calFrameCount = 0;
-  calBaseline   = null;
-  calRunning    = true;
-
-  const cv = calVideo();
-  const cc = calCanvas();
-  cc.width  = cv.videoWidth  || 640;
-  cc.height = cv.videoHeight || 480;
+  document.getElementById('cal-btn').disabled = true;
+  document.getElementById('cal-status').textContent = 'Calibrating… 0%';
+  calFrameCount = 0; calBaseline = null; calRunning = true;
+  const cv = document.getElementById('cal-video');
+  const cc = document.getElementById('cal-canvas');
+  cc.width = cv.videoWidth || 640; cc.height = cv.videoHeight || 480;
 
   if (!calPose) {
     calPose = new Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
-    calPose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+    calPose.setOptions({ modelComplexity:1, smoothLandmarks:true, minDetectionConfidence:.6, minTrackingConfidence:.6 });
     calPose.onResults(onCalResults);
   }
-
-  async function calLoop() {
+  const loop = async () => {
     if (!calRunning) return;
     if (cv.readyState >= 2) await calPose.send({ image: cv });
-    if (calRunning) requestAnimationFrame(calLoop);
-  }
-  requestAnimationFrame(calLoop);
+    if (calRunning) requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
 }
 
 function onCalResults(results) {
   if (!calRunning) return;
-  const ctx = calCanvas().getContext('2d');
-  ctx.clearRect(0, 0, calCanvas().width, calCanvas().height);
-
+  const cc  = document.getElementById('cal-canvas');
+  const ctx = cc.getContext('2d');
+  ctx.clearRect(0, 0, cc.width, cc.height);
   if (!results.poseLandmarks) return;
   const f = extractFeatures(results.poseLandmarks);
   if (!f) return;
-
-  drawSkeletonOn(results.poseLandmarks, calCanvas(), '#14B8A6');
-
+  drawSkeletonOn(results.poseLandmarks, cc, '#14B8A6');
   if (calFrameCount < CALIBRATION_FRAMES) {
     if (!calBaseline) calBaseline = { ...f, count: 1 };
-    else {
-      for (const k of Object.keys(f)) {
-        calBaseline[k] = (calBaseline[k] * calBaseline.count + f[k]) / (calBaseline.count + 1);
-      }
-      calBaseline.count++;
-    }
+    else { for (const k of Object.keys(f)) calBaseline[k] = (calBaseline[k] * calBaseline.count + f[k]) / (calBaseline.count + 1); calBaseline.count++; }
     calFrameCount++;
     const pct = Math.round(calFrameCount / CALIBRATION_FRAMES * 100);
-    calStatus().textContent = `Calibrating… ${pct}%`;
-    calProg().style.width = pct + '%';
+    document.getElementById('cal-status').textContent  = `Calibrating… ${pct}%`;
+    document.getElementById('cal-progress').style.width = pct + '%';
   } else if (calFrameCount === CALIBRATION_FRAMES) {
     calRunning = false;
-    calStatus().textContent = 'Calibration complete!';
-    calProg().style.width = '100%';
-    localStorage.setItem('pm_baseline', JSON.stringify(calBaseline));
+    document.getElementById('cal-status').textContent   = 'Calibration complete!';
+    document.getElementById('cal-progress').style.width = '100%';
+    localStorage.setItem('pm_baseline',    JSON.stringify(calBaseline));
     localStorage.setItem('pm_initialized', '1');
     if (calStream) calStream.getTracks().forEach(t => t.stop());
     calFrameCount++;
-    setTimeout(() => { showScreen('home'); initHomeCamera(); }, 600);
+    setTimeout(() => { showScreen('home'); initHomeCamera(); }, 700);
   }
 }
 
 /* ===== HOME CAMERA ===== */
-const homeVideo  = () => document.getElementById('home-video');
-const homeCanvas = () => document.getElementById('home-canvas');
-
 async function initHomeCamera() {
-  const savedBaseline = localStorage.getItem('pm_baseline');
-  if (savedBaseline) {
-    baseline = JSON.parse(savedBaseline);
-    frameCount = CALIBRATION_FRAMES + 1;
-  }
+  const saved = localStorage.getItem('pm_baseline');
+  if (saved) { baseline = JSON.parse(saved); frameCount = CALIBRATION_FRAMES + 1; }
 
   try {
     cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'user', width:640, height:480 } });
-    homeVideo().srcObject = cameraStream;
-    await homeVideo().play();
+    document.getElementById('home-video').srcObject = cameraStream;
+    await document.getElementById('home-video').play();
   } catch(e) {
-    document.getElementById('home-status-text').textContent = `Camera: ${e.name}`;
-    console.error(e);
+    document.getElementById('home-status-text').textContent = `Camera: ${e.name} — close other camera apps and retry.`;
     return;
   }
 
   if (!poseInstance) preloadPose();
-
   poseInstance.onResults(onHomeResults);
-  running = true;
-  paused  = false;
+  running = true; paused = false;
   document.getElementById('btn-pause').textContent = '⏸ Pause';
   document.getElementById('btn-pause').classList.add('primary');
-
   startStatsTracking();
   requestAnimationFrame(homeLoop);
 }
 
 async function homeLoop(ts) {
   if (!running) return;
-  const elapsed = ts - lastFrameAt;
-  if (!paused && elapsed >= 1000 / targetFPS) {
+  if (!paused && ts - lastFrameAt >= 1000 / targetFPS) {
     lastFrameAt = ts;
-    const hv = homeVideo();
-    const hc = homeCanvas();
-    if (hv.videoWidth && hc.width !== hv.videoWidth) {
-      hc.width = hv.videoWidth; hc.height = hv.videoHeight;
-    }
-    if (hv.readyState >= 2) {
-      try { await poseInstance.send({ image: hv }); } catch(e) {}
-    }
+    const hv = document.getElementById('home-video');
+    const hc = document.getElementById('home-canvas');
+    if (hv.videoWidth && hc.width !== hv.videoWidth) { hc.width = hv.videoWidth; hc.height = hv.videoHeight; }
+    if (hv.readyState >= 2) { try { await poseInstance.send({ image: hv }); } catch(e) {} }
   }
   requestAnimationFrame(homeLoop);
 }
@@ -1416,81 +1153,59 @@ function togglePause() {
   paused = !paused;
   const btn = document.getElementById('btn-pause');
   if (paused) {
-    btn.textContent = '▶ Resume';
-    btn.classList.remove('primary');
+    btn.textContent = '▶ Resume'; btn.classList.remove('primary');
     document.getElementById('home-status-text').textContent = 'Paused';
     setBadge('', false, false);
   } else {
-    btn.textContent = '⏸ Pause';
-    btn.classList.add('primary');
+    btn.textContent = '⏸ Pause'; btn.classList.add('primary');
     document.getElementById('home-status-text').textContent = 'Monitoring…';
   }
 }
 
 function recalibrateHome() {
-  baseline   = null;
-  frameCount = 0;
-  goodFrames = 0;
-  badFrames  = 0;
-  badPostureStart = null;
-  lastAlertTime   = null;
+  baseline = null; frameCount = 0; goodFrames = 0; badFrames = 0;
+  badPostureStart = null; lastAlertTime = null;
   document.getElementById('home-status-text').textContent = 'Calibrating… sit upright';
-  setBadge('', false, false);
-  clearMetrics();
+  setBadge('', false, false); clearMetrics();
 }
 
 /* ===== POSTURE DETECTION ===== */
 function onHomeResults(results) {
-  const hc = homeCanvas();
+  const hc  = document.getElementById('home-canvas');
   const ctx = hc.getContext('2d');
   ctx.clearRect(0, 0, hc.width, hc.height);
-
   if (!results.poseLandmarks) {
     if (baseline) document.getElementById('home-status-text').textContent = 'No person detected';
     return;
   }
-
   const lm = results.poseLandmarks;
   const f  = extractFeatures(lm);
   if (!f) return;
-
   const sens = parseInt(document.getElementById('sensitivity').value);
 
   if (frameCount < CALIBRATION_FRAMES) {
     if (!baseline) baseline = { ...f, count: 1 };
-    else {
-      for (const k of Object.keys(f)) {
-        baseline[k] = (baseline[k] * baseline.count + f[k]) / (baseline.count + 1);
-      }
-      baseline.count++;
-    }
+    else { for (const k of Object.keys(f)) baseline[k] = (baseline[k] * baseline.count + f[k]) / (baseline.count + 1); baseline.count++; }
     frameCount++;
-    const pct = Math.round(frameCount / CALIBRATION_FRAMES * 100);
-    document.getElementById('home-status-text').textContent = `Calibrating… ${pct}%`;
+    document.getElementById('home-status-text').textContent = `Calibrating… ${Math.round(frameCount / CALIBRATION_FRAMES * 100)}%`;
     drawSkeletonOn(lm, hc, '#94A3B8');
     return;
   }
+  if (frameCount === CALIBRATION_FRAMES) { localStorage.setItem('pm_baseline', JSON.stringify(baseline)); frameCount++; }
 
-  if (frameCount === CALIBRATION_FRAMES) {
-    localStorage.setItem('pm_baseline', JSON.stringify(baseline));
-    document.getElementById('home-status-text').textContent = 'Monitoring your posture';
-    frameCount++;
-  }
-
-  const slouchThresh    = 0.04 + (10 - sens) * 0.012;
-  const faceRatioThresh = 0.03 + (10 - sens) * 0.008;
-  const earGapThresh    = 0.06 + (10 - sens) * 0.015;
-  const headTiltThresh  = 0.04 + (10 - sens) * 0.01;
-  const shoulderThresh  = 3    + (10 - sens) * 1.5;
+  const slouchThresh    = .04 + (10 - sens) * .012;
+  const faceRatioThresh = .03 + (10 - sens) * .008;
+  const earGapThresh    = .06 + (10 - sens) * .015;
+  const headTiltThresh  = .04 + (10 - sens) * .01;
+  const shoulderThresh  = 3   + (10 - sens) * 1.5;
 
   const slouchDiff    = baseline.noseToShoulderDist - f.noseToShoulderDist;
   const faceRatioDiff = f.faceToShoulderRatio       - baseline.faceToShoulderRatio;
   const earGapDiff    = baseline.shoulderEarGap      - f.shoulderEarGap;
-
-  const slouchCount    = [slouchDiff > slouchThresh, faceRatioDiff > faceRatioThresh, earGapDiff > earGapThresh].filter(Boolean).length;
-  const isSlouchBad    = slouchCount >= 2;
-  const isHeadBad      = Math.abs(f.headTiltX - baseline.headTiltX) > headTiltThresh;
-  const isShoulderBad  = Math.abs(f.shoulderAngleDeg - baseline.shoulderAngleDeg) > shoulderThresh;
+  const slouchCount   = [slouchDiff > slouchThresh, faceRatioDiff > faceRatioThresh, earGapDiff > earGapThresh].filter(Boolean).length;
+  const isSlouchBad   = slouchCount >= 2;
+  const isHeadBad     = Math.abs(f.headTiltX - baseline.headTiltX) > headTiltThresh;
+  const isShoulderBad = Math.abs(f.shoulderAngleDeg - baseline.shoulderAngleDeg) > shoulderThresh;
 
   const issues = [];
   if (isSlouchBad)   issues.push('slouching');
@@ -1501,141 +1216,118 @@ function onHomeResults(results) {
   if (isGood) { goodFrames = Math.min(goodFrames + 1, 30); badFrames = Math.max(badFrames - 1, 0); }
   else        { badFrames  = Math.min(badFrames  + 1, 30); goodFrames = Math.max(goodFrames - 1, 0); }
 
-  setMetric('m-slouch',   !isSlouchBad,   'Upright',    'Slouching');
-  setMetric('m-head',     !isHeadBad,     'Centered',   'Off-center');
-  setMetric('m-shoulder', !isShoulderBad, 'Level',      'Uneven');
+  setMetric('m-slouch',   !isSlouchBad,   'Upright',   'Slouching');
+  setMetric('m-head',     !isHeadBad,     'Centered',  'Off-center');
+  setMetric('m-shoulder', !isShoulderBad, 'Level',     'Uneven');
 
   if (badFrames > 12) {
     currentIsGood = false;
     setMetric('m-overall', false, 'Good', 'Poor');
-    setBadge(issues.length ? 'Fix: ' + issues.join(', ') : 'Fix your posture', true, false);
-    document.getElementById('home-status-text').textContent = issues.length ? issues.join(', ') : 'Adjust your position';
+    setBadge(issues.length ? issues.join(', ') : 'Fix posture', true, false);
+    document.getElementById('home-status-text').textContent = issues.length ? issues.join(', ') : 'Adjust position';
     window.posturemate?.setTrayIcon('bad');
     handleAlert(false, issues);
   } else if (goodFrames > 8) {
     currentIsGood = true;
     setMetric('m-overall', true, 'Good', 'Poor');
     setBadge('Good posture', false, true);
-    document.getElementById('home-status-text').textContent = 'Looking good — keep it up!';
+    document.getElementById('home-status-text').textContent = 'Looking good!';
     window.posturemate?.setTrayIcon('good');
     window.posturemate?.sendGood();
     handleAlert(true, []);
   }
-
   drawSkeletonOn(lm, hc, isGood ? '#22C55E' : '#EF4444');
 }
 
 function setBadge(text, isBad, isGood) {
   const b = document.getElementById('posture-badge');
   b.textContent = text;
-  b.className = 'cam-overlay-badge';
+  b.className   = 'cam-overlay-badge';
   if (isBad)  b.classList.add('bad');
   if (isGood) b.classList.add('good');
 }
 
 function setMetric(id, good, goodText, badText) {
   const el = document.getElementById(id);
-  el.textContent  = good ? goodText : badText;
-  el.className    = 'metric-value ' + (good ? 'good' : 'bad');
+  el.textContent = good ? goodText : badText;
+  el.className   = 'metric-value ' + (good ? 'good' : 'bad');
 }
 
 function clearMetrics() {
   ['m-slouch','m-head','m-shoulder','m-overall'].forEach(id => {
     const el = document.getElementById(id);
-    el.textContent = '—';
-    el.className = 'metric-value';
+    el.textContent = '—'; el.className = 'metric-value';
   });
   setBadge('', false, false);
 }
 
 /* ===== FEATURE EXTRACTION ===== */
 function extractFeatures(lm) {
-  const nose = lm[0], leftEar = lm[7], rightEar = lm[8];
-  const ls = lm[11], rs = lm[12];
+  const nose = lm[0], lE = lm[7], rE = lm[8], ls = lm[11], rs = lm[12];
   const sw = Math.abs(ls.x - rs.x);
   if (sw < 0.05) return null;
-  const smY   = (ls.y + rs.y) / 2;
-  const emY   = (leftEar.y + rightEar.y) / 2;
-  const emX   = (leftEar.x + rightEar.x) / 2;
-  const eSpan = Math.abs(leftEar.x - rightEar.x);
+  const smY = (ls.y + rs.y) / 2;
   return {
     noseToShoulderDist: (smY - nose.y) / sw,
-    faceToShoulderRatio: eSpan / sw,
-    shoulderEarGap: (smY - emY) / sw,
-    headTiltX: Math.abs(nose.x - emX) / sw,
+    faceToShoulderRatio: Math.abs(lE.x - rE.x) / sw,
+    shoulderEarGap: (smY - (lE.y + rE.y) / 2) / sw,
+    headTiltX: Math.abs(nose.x - (lE.x + rE.x) / 2) / sw,
     shoulderAngleDeg: Math.abs(Math.atan2(rs.y - ls.y, rs.x - ls.x) * 180 / Math.PI),
     shoulderWidth: sw,
   };
 }
 
-/* ===== SKELETON DRAWING ===== */
+/* ===== SKELETON ===== */
 function drawSkeletonOn(lm, canvas, color) {
-  const ctx = canvas.getContext('2d');
+  const ctx   = canvas.getContext('2d');
   const pairs = [[0,7],[0,8],[7,11],[8,12],[11,12],[11,23],[12,24],[23,24]];
-  const pts = lm.map(p => ({ x: p.x * canvas.width, y: p.y * canvas.height }));
+  const pts   = lm.map(p => ({ x: p.x * canvas.width, y: p.y * canvas.height }));
   ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-  pairs.forEach(([a, b]) => {
+  pairs.forEach(([a,b]) => {
     if (!lm[a] || !lm[b]) return;
     ctx.beginPath(); ctx.moveTo(pts[a].x, pts[a].y); ctx.lineTo(pts[b].x, pts[b].y); ctx.stroke();
   });
   [0,7,8,11,12,23,24].forEach(i => {
     if (!lm[i]) return;
-    ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 4, 0, Math.PI * 2);
+    ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 4, 0, Math.PI*2);
     ctx.fillStyle = color; ctx.fill();
   });
 }
 
 /* ===== NOTIFICATIONS ===== */
 function handleAlert(isGood, issues) {
-  if (isGood) {
-    badPostureStart = null;
-    lastAlertTime   = null;
-    return;
-  }
+  if (isGood) { badPostureStart = null; lastAlertTime = null; return; }
   if (!badPostureStart) badPostureStart = Date.now();
-  const elapsed = Date.now() - badPostureStart;
-  if (elapsed < FIRST_ALERT_MS) return;
-  if (!localStorage.getItem('pm_notif') || localStorage.getItem('pm_notif') !== '0') {
-    const sinceLastAlert = lastAlertTime ? Date.now() - lastAlertTime : Infinity;
-    if (sinceLastAlert >= REPEAT_ALERT_MS) {
-      lastAlertTime = Date.now();
-      const msg = issues.length ? `Bad posture detected: ${issues.join(', ')}.` : 'Fix your posture.';
-      const extra = sinceLastAlert > 600_000 ? ' Consider recalibrating.' : '';
-      window.posturemate?.sendAlert(msg + extra);
-    }
+  if (Date.now() - badPostureStart < FIRST_ALERT_MS) return;
+  if (localStorage.getItem('pm_notif') === '0') return;
+  const since = lastAlertTime ? Date.now() - lastAlertTime : Infinity;
+  if (since >= REPEAT_ALERT_MS) {
+    lastAlertTime = Date.now();
+    const msg   = issues.length ? `Bad posture: ${issues.join(', ')}.` : 'Fix your posture.';
+    const extra = since > 600_000 ? ' Consider recalibrating.' : '';
+    window.posturemate?.sendAlert(msg + extra);
   }
 }
 
 /* ===== STATISTICS ===== */
 function loadStats() {
-  const key = 'pm_stats_' + new Date().toDateString();
-  const raw = localStorage.getItem(key);
+  const raw = localStorage.getItem('pm_stats_' + new Date().toDateString());
   return raw ? JSON.parse(raw) : { activeSeconds: 0, badSeconds: 0 };
 }
-
 function saveStats(s) {
-  const key = 'pm_stats_' + new Date().toDateString();
-  localStorage.setItem(key, JSON.stringify(s));
+  localStorage.setItem('pm_stats_' + new Date().toDateString(), JSON.stringify(s));
 }
-
 function getStreak() {
   const today = new Date().toDateString();
   const last  = localStorage.getItem('pm_streak_date');
   let count   = parseInt(localStorage.getItem('pm_streak_count') || '0');
-
   if (last === today) return count;
-
   const yesterday = new Date(Date.now() - 86400000).toDateString();
-  if (last === yesterday) {
-    count++;
-  } else if (last !== today) {
-    count = 1;
-  }
+  count = last === yesterday ? count + 1 : 1;
   localStorage.setItem('pm_streak_date',  today);
   localStorage.setItem('pm_streak_count', String(count));
   return count;
 }
-
 function startStatsTracking() {
   if (statsInterval) clearInterval(statsInterval);
   statsInterval = setInterval(() => {
@@ -1648,30 +1340,21 @@ function startStatsTracking() {
     renderStats();
   }, 1000);
 }
-
 function renderStats() {
-  const s = stats;
-  const hours = (s.activeSeconds / 3600).toFixed(1) + 'h';
-  const badPct = s.activeSeconds > 0
-    ? Math.round(s.badSeconds / s.activeSeconds * 100) + '%'
-    : '—%';
-  document.getElementById('stat-hours').textContent   = hours;
-  document.getElementById('stat-bad-pct').textContent = badPct;
+  document.getElementById('stat-hours').textContent   = (stats.activeSeconds / 3600).toFixed(1) + 'h';
+  document.getElementById('stat-bad-pct').textContent = stats.activeSeconds > 0 ? Math.round(stats.badSeconds / stats.activeSeconds * 100) + '%' : '—%';
   document.getElementById('stat-streak').textContent  = getStreak();
 }
 
-/* ===== TAB PANEL ===== */
+/* ===== TABS ===== */
 function setTab(i) {
   currentTab = i;
   document.querySelectorAll('.panel-tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
   document.querySelectorAll('.tab-dot').forEach((d, idx) => d.classList.toggle('active', idx === i));
 }
+function cycleTab(dir) { setTab((currentTab + dir + 3) % 3); }
 
-function cycleTab(dir) {
-  setTab((currentTab + dir + 3) % 3);
-}
-
-/* ===== QUOTE OF THE DAY ===== */
+/* ===== QUOTE ===== */
 function renderQuote() {
   const d = new Date().toDateString();
   let hash = 0;
@@ -1683,69 +1366,53 @@ function renderQuote() {
 }
 
 /* ===== POMODORO ===== */
-function getWorkSecs() {
-  const h = parseInt(document.getElementById('work-h').value) || 0;
-  const m = parseInt(document.getElementById('work-m').value) || 0;
-  const s = parseInt(document.getElementById('work-s').value) || 0;
+function getTimeSecs(type) {
+  const h = parseInt(document.getElementById(`${type}-h`).value) || 0;
+  const m = parseInt(document.getElementById(`${type}-m`).value) || 0;
+  const s = parseInt(document.getElementById(`${type}-s`).value) || 0;
   return h * 3600 + m * 60 + s;
 }
-function getRestSecs() {
-  const h = parseInt(document.getElementById('rest-h').value) || 0;
-  const m = parseInt(document.getElementById('rest-m').value) || 0;
-  const s = parseInt(document.getElementById('rest-s').value) || 0;
-  return h * 3600 + m * 60 + s;
-}
-
 function startPomodoro() {
-  const total = getWorkSecs();
+  const total = getTimeSecs('work');
   if (total <= 0) return;
-  pomState = { mode: 'running', isWork: true, totalSecs: total, remaining: total, interval: null };
-  showPomRunning(true);
+  pomState = { mode:'running', isWork:true, totalSecs:total, remaining:total, interval:null };
+  document.getElementById('pom-setup').style.display   = 'none';
+  document.getElementById('pom-running').style.display = 'flex';
   document.getElementById('pom-mode-badge').textContent = 'WORK';
   document.getElementById('pom-mode-badge').className   = 'pom-mode-badge work';
   document.getElementById('pom-circle-fg').style.stroke = 'var(--bad)';
+  document.getElementById('pom-pause-btn').textContent  = '⏸ Pause';
+  document.getElementById('pom-pause-btn').classList.add('accent');
   pomState.interval = setInterval(pomTick, 1000);
   updatePomDisplay();
 }
-
 function pomTick() {
   if (pomState.mode !== 'running') return;
   pomState.remaining--;
   if (pomState.remaining <= 0) {
     if (pomState.isWork) {
       window.posturemate?.sendAlert('Work session done! Time for a break.');
-      const restTotal = getRestSecs();
-      if (restTotal > 0) {
-        pomState.isWork    = false;
-        pomState.totalSecs = restTotal;
-        pomState.remaining = restTotal;
+      const rest = getTimeSecs('rest');
+      if (rest > 0) {
+        pomState.isWork = false; pomState.totalSecs = rest; pomState.remaining = rest;
         document.getElementById('pom-mode-badge').textContent = 'REST';
         document.getElementById('pom-mode-badge').className   = 'pom-mode-badge rest';
         document.getElementById('pom-circle-fg').style.stroke = 'var(--good)';
-      } else {
-        resetPomodoro(); return;
-      }
-    } else {
-      window.posturemate?.sendAlert('Rest over. Back to work!');
-      resetPomodoro(); return;
-    }
+      } else { resetPomodoro(); return; }
+    } else { window.posturemate?.sendAlert('Rest over. Back to work!'); resetPomodoro(); return; }
   }
   updatePomDisplay();
 }
-
 function updatePomDisplay() {
   const r = pomState.remaining;
   const h = Math.floor(r / 3600);
   const m = Math.floor((r % 3600) / 60);
   const s = r % 60;
-  const label = h > 0
+  document.getElementById('pom-countdown').textContent = h > 0
     ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
     : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  document.getElementById('pom-countdown').textContent = label;
-  const frac = pomState.remaining / pomState.totalSecs;
-  document.getElementById('pom-circle-fg').style.strokeDashoffset = CIRC * (1 - frac);
+  document.getElementById('pom-circle-fg').style.strokeDashoffset = CIRC * (1 - pomState.remaining / pomState.totalSecs);
 }
-
 function togglePomodoro() {
   if (pomState.mode === 'running') {
     pomState.mode = 'paused';
@@ -1757,32 +1424,23 @@ function togglePomodoro() {
     document.getElementById('pom-pause-btn').classList.add('accent');
   }
 }
-
 function resetPomodoro() {
   if (pomState.interval) clearInterval(pomState.interval);
-  pomState = { mode: 'idle', isWork: true, totalSecs: 0, remaining: 0, interval: null };
-  showPomRunning(false);
+  pomState = { mode:'idle', isWork:true, totalSecs:0, remaining:0, interval:null };
+  document.getElementById('pom-setup').style.display   = 'flex';
+  document.getElementById('pom-running').style.display = 'none';
   document.getElementById('pom-circle-fg').style.strokeDashoffset = '0';
 }
-
-function showPomRunning(show) {
-  document.getElementById('pom-setup').style.display   = show ? 'none'  : 'flex';
-  document.getElementById('pom-running').style.display = show ? 'flex'  : 'none';
-}
-
 function adjustTime(type, seg, delta) {
-  const el = document.getElementById(`${type}-${seg}`);
+  const el  = document.getElementById(`${type}-${seg}`);
   const max = seg === 'h' ? 9 : 59;
   let v = (parseInt(el.value) || 0) + delta;
-  if (v < 0) v = max;
-  if (v > max) v = 0;
-  el.value = seg === 'h' ? String(v) : String(v).padStart(2, '0');
+  if (v < 0) v = max; if (v > max) v = 0;
+  el.value = seg === 'h' ? String(v) : String(v).padStart(2,'0');
 }
-
 function clampSeg(el, min, max) {
-  let v = parseInt(el.value);
-  if (isNaN(v)) return;
-  el.value = Math.max(min, Math.min(max, v));
+  const v = parseInt(el.value);
+  if (!isNaN(v)) el.value = Math.max(min, Math.min(max, v));
 }
 </script>
 </body>
