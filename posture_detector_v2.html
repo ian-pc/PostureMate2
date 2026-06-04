@@ -1,0 +1,314 @@
+
+<style>
+  #app { padding: 1rem 0; font-family: var(--font-sans); }
+  #status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); margin-bottom: 1rem; font-size: 14px; color: var(--color-text-secondary); }
+  #posture-badge { padding: 6px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; transition: all 0.4s; }
+  .badge-good { background: #EAF3DE; color: #27500A; }
+  .badge-bad { background: #FCEBEB; color: #791F1F; }
+  .badge-neutral { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  #canvas-wrap { position: relative; width: 100%; border-radius: var(--border-radius-lg); overflow: hidden; background: #000; aspect-ratio: 4/3; }
+  #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  #overlay { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+  #feedback { margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 14px; }
+  .metric-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .metric-value { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+  #start-btn { padding: 10px 24px; font-size: 14px; border-radius: var(--border-radius-md); cursor: pointer; background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); color: var(--color-text-primary); }
+  #start-btn:hover { background: var(--color-background-secondary); }
+  #alert-overlay { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(162,45,45,0.9); color: #fff; padding: 8px 20px; border-radius: 999px; font-size: 13px; font-weight: 500; display: none; white-space: nowrap; }
+</style>
+
+<div id="app">
+  <h2 class="sr-only">Posture detector using your webcam</h2>
+  <div id="status-bar">
+    <i class="ti ti-camera" aria-hidden="true" style="font-size:18px;"></i>
+    <span id="status-text">Click start to begin</span>
+    <span id="posture-badge" class="badge-neutral" style="margin-left:auto;">—</span>
+  </div>
+
+  <div id="canvas-wrap">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <div id="alert-overlay">⚠ Fix your posture</div>
+  </div>
+
+  <div style="margin-top:1rem; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <button id="start-btn" onclick="startDetection()"><i class="ti ti-player-play" aria-hidden="true"></i> Start camera</button>
+    <button id="stop-btn" onclick="stopDetection()" style="display:none; padding:10px 24px; font-size:14px; border-radius:var(--border-radius-md); cursor:pointer; background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); color:var(--color-text-primary);"><i class="ti ti-player-stop" aria-hidden="true"></i> Stop</button>
+    <button id="recal-btn" onclick="recalibrate()" style="display:none; padding:10px 24px; font-size:14px; border-radius:var(--border-radius-md); cursor:pointer; background:var(--color-background-primary); border:0.5px solid var(--color-border-secondary); color:var(--color-text-primary);"><i class="ti ti-refresh" aria-hidden="true"></i> Recalibrate</button>
+    <label style="font-size:13px; color:var(--color-text-secondary); margin-left:auto;">Sensitivity</label>
+    <input type="range" id="sensitivity" min="1" max="10" value="5" step="1" style="width:100px;">
+    <span id="sens-val" style="font-size:13px; color:var(--color-text-secondary); min-width:14px;">5</span>
+  </div>
+
+  <div id="feedback">
+    <div class="metric"><div class="metric-label">Slouch / forward lean</div><div class="metric-value" id="m-slouch">—</div></div>
+    <div class="metric"><div class="metric-label">Head tilt</div><div class="metric-value" id="m-head">—</div></div>
+    <div class="metric"><div class="metric-label">Shoulder level</div><div class="metric-value" id="m-shoulder">—</div></div>
+    <div class="metric"><div class="metric-label">Overall posture</div><div class="metric-value" id="m-overall">—</div></div>
+  </div>
+
+  <p style="font-size:12px; color:var(--color-text-secondary); margin-top:1rem;">
+    <i class="ti ti-lock" aria-hidden="true"></i> All processing is local — no video is sent anywhere.
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+<script>
+let poseInstance = null;
+let stream = null;
+let running = false;
+let baseline = null;
+let frameCount = 0;
+let goodFrames = 0, badFrames = 0;
+const CALIBRATION_FRAMES = 45;
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('overlay');
+const ctx = canvas.getContext('2d');
+
+document.getElementById('sensitivity').oninput = function() {
+  document.getElementById('sens-val').textContent = this.value;
+};
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+}
+
+function toCanvas(p) {
+  return { x: p.x * canvas.width, y: p.y * canvas.height };
+}
+
+function dist2D(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+// Key insight: when you slouch forward facing the camera straight-on,
+// the face appears LARGER relative to shoulder width (you're closer to camera),
+// and shoulder Y rises toward the nose Y (shoulders appear to "climb").
+// We track:
+//  1. nose-to-shoulder-midpoint Y distance (normalized by shoulder width)
+//  2. face size (ear-to-ear dist) relative to shoulder width — grows when slouching
+//  3. shoulder Y relative to nose Y — shoulders rise when hunching
+
+function extractFeatures(lm) {
+  const nose = lm[0], leftEar = lm[7], rightEar = lm[8];
+  const leftShoulder = lm[11], rightShoulder = lm[12];
+  const leftHip = lm[23], rightHip = lm[24];
+
+  const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x);
+  if (shoulderWidth < 0.05) return null; // too small / not visible
+
+  const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
+  const earMidY = (leftEar.y + rightEar.y) / 2;
+  const earMidX = (leftEar.x + rightEar.x) / 2;
+  const noseX = nose.x;
+
+  // How far nose is above shoulder midpoint, normalized to shoulder width
+  // Smaller = slouching (shoulders have risen toward face, or face dropped)
+  const noseToShoulderDist = (shoulderMidY - nose.y) / shoulderWidth;
+
+  // Ear span relative to shoulder width — larger ratio = face is closer to cam = slouching
+  const earSpan = Math.abs(leftEar.x - rightEar.x);
+  const faceToShoulderRatio = earSpan / shoulderWidth;
+
+  // Shoulder Y vs ear midpoint Y — smaller gap = shoulders risen up = hunching
+  const shoulderEarGap = (shoulderMidY - earMidY) / shoulderWidth;
+
+  // Lateral head tilt & side lean (works at all angles)
+  const headTiltX = Math.abs(noseX - earMidX) / shoulderWidth;
+  const shoulderAngleDeg = Math.abs(Math.atan2(rightShoulder.y - leftShoulder.y, rightShoulder.x - leftShoulder.x) * 180 / Math.PI);
+
+  return { noseToShoulderDist, faceToShoulderRatio, shoulderEarGap, headTiltX, shoulderAngleDeg, shoulderWidth };
+}
+
+async function startDetection() {
+  document.getElementById('start-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = '';
+  document.getElementById('recal-btn').style.display = '';
+  document.getElementById('status-text').textContent = 'Loading pose model…';
+  resizeCanvas();
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+    video.srcObject = stream;
+    await video.play();
+  } catch(e) {
+    document.getElementById('status-text').textContent = 'Camera permission denied — please allow and reload';
+    return;
+  }
+
+  const pose = new Pose({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}` });
+  pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+  pose.onResults(onResults);
+  poseInstance = pose;
+  running = true;
+  recalibrate();
+  requestAnimationFrame(processFrame);
+}
+
+async function processFrame() {
+  if (!running) return;
+  if (video.readyState >= 2) {
+    resizeCanvas();
+    await poseInstance.send({ image: video });
+  }
+  requestAnimationFrame(processFrame);
+}
+
+function recalibrate() {
+  baseline = null;
+  frameCount = 0;
+  goodFrames = 0;
+  badFrames = 0;
+  document.getElementById('status-text').textContent = 'Calibrating… sit upright & still for 3 sec';
+  document.getElementById('posture-badge').textContent = '—';
+  document.getElementById('posture-badge').className = 'badge-neutral';
+  document.getElementById('alert-overlay').style.display = 'none';
+  ['m-slouch','m-head','m-shoulder','m-overall'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '—'; el.style.color = '';
+  });
+}
+
+function onResults(results) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!results.poseLandmarks) {
+    if (baseline) document.getElementById('status-text').textContent = 'No person detected — move into frame';
+    return;
+  }
+
+  const lm = results.poseLandmarks;
+  const features = extractFeatures(lm);
+  if (!features) return;
+
+  const sensitivity = parseInt(document.getElementById('sensitivity').value);
+
+  // Accumulate baseline
+  if (frameCount < CALIBRATION_FRAMES) {
+    if (!baseline) baseline = { ...features, count: 1 };
+    else {
+      // running average
+      for (const k of Object.keys(features)) {
+        baseline[k] = (baseline[k] * baseline.count + features[k]) / (baseline.count + 1);
+      }
+      baseline.count++;
+    }
+    frameCount++;
+    const pct = Math.round(frameCount / CALIBRATION_FRAMES * 100);
+    document.getElementById('status-text').textContent = `Calibrating… ${pct}%`;
+    drawSkeleton(lm, '#888780');
+    return;
+  }
+
+  if (frameCount === CALIBRATION_FRAMES) {
+    document.getElementById('status-text').textContent = 'Calibrated — now monitoring your posture';
+    frameCount++;
+  }
+
+  // Thresholds scale with sensitivity (1=strict, 10=lenient)
+  const slouchThresh    = 0.04 + (10 - sensitivity) * 0.012;  // noseToShoulderDist drop
+  const faceRatioThresh = 0.03 + (10 - sensitivity) * 0.008;  // face seems bigger
+  const earGapThresh    = 0.06 + (10 - sensitivity) * 0.015;  // shoulders risen
+  const headTiltThresh  = 0.04 + (10 - sensitivity) * 0.01;
+  const shoulderThresh  = 3    + (10 - sensitivity) * 1.5;
+
+  // Positive diff = slouching (value dropped from baseline)
+  const slouchDiff    = baseline.noseToShoulderDist - features.noseToShoulderDist;
+  const faceRatioDiff = features.faceToShoulderRatio - baseline.faceToShoulderRatio;
+  const earGapDiff    = baseline.shoulderEarGap - features.shoulderEarGap;
+
+  // We combine the three slouch signals — need 2 of 3 to trigger (reduces false positives)
+  const slouchVotes = [slouchDiff > slouchThresh, faceRatioDiff > faceRatioThresh, earGapDiff > earGapThresh];
+  const slouchCount = slouchVotes.filter(Boolean).length;
+  const isSlouchBad = slouchCount >= 2;
+
+  const headTiltDiff = Math.abs(features.headTiltX - baseline.headTiltX);
+  const isHeadBad = headTiltDiff > headTiltThresh;
+  const isShoulderBad = Math.abs(features.shoulderAngleDeg - baseline.shoulderAngleDeg) > shoulderThresh;
+
+  const issues = [];
+  if (isSlouchBad) issues.push('slouching');
+  if (isHeadBad) issues.push('head tilt');
+  if (isShoulderBad) issues.push('uneven shoulders');
+
+  const isGood = issues.length === 0;
+
+  function setMetric(id, good, goodText, badText) {
+    const el = document.getElementById(id);
+    el.textContent = good ? goodText : badText;
+    el.style.color = good ? '#3B6D11' : '#A32D2D';
+  }
+
+  setMetric('m-slouch',    !isSlouchBad,   'Upright',   'Slouching');
+  setMetric('m-head',      !isHeadBad,     'Centered',  'Off-center');
+  setMetric('m-shoulder',  !isShoulderBad, 'Level',     'Uneven');
+
+  if (isGood) { goodFrames = Math.min(goodFrames + 1, 30); badFrames = Math.max(badFrames - 1, 0); }
+  else        { badFrames  = Math.min(badFrames  + 1, 30); goodFrames = Math.max(goodFrames - 1, 0); }
+
+  const badge = document.getElementById('posture-badge');
+  const alert = document.getElementById('alert-overlay');
+  const overall = document.getElementById('m-overall');
+
+  if (badFrames > 12) {
+    badge.textContent = 'Poor posture';
+    badge.className = 'badge-bad';
+    alert.style.display = 'block';
+    overall.textContent = 'Poor';
+    overall.style.color = '#A32D2D';
+    document.getElementById('status-text').textContent = issues.length ? 'Fix: ' + issues.join(', ') : 'Adjust your position';
+  } else if (goodFrames > 8) {
+    badge.textContent = 'Good posture';
+    badge.className = 'badge-good';
+    alert.style.display = 'none';
+    overall.textContent = 'Good';
+    overall.style.color = '#3B6D11';
+    document.getElementById('status-text').textContent = 'Looking good — keep it up!';
+  }
+
+  const color = isGood ? '#1D9E75' : '#E24B4A';
+  drawSkeleton(lm, color);
+}
+
+function drawSkeleton(lm, color) {
+  const pairs = [[0,7],[0,8],[7,11],[8,12],[11,12],[11,23],[12,24],[23,24]];
+  const pts = lm.map(p => toCanvas(p));
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  pairs.forEach(([a, b]) => {
+    if (!lm[a] || !lm[b]) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[a].x, pts[a].y);
+    ctx.lineTo(pts[b].x, pts[b].y);
+    ctx.stroke();
+  });
+  [0,7,8,11,12,23,24].forEach(i => {
+    if (!lm[i]) return;
+    ctx.beginPath();
+    ctx.arc(pts[i].x, pts[i].y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  });
+}
+
+function stopDetection() {
+  running = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('start-btn').style.display = '';
+  document.getElementById('stop-btn').style.display = 'none';
+  document.getElementById('recal-btn').style.display = 'none';
+  document.getElementById('status-text').textContent = 'Stopped';
+  document.getElementById('posture-badge').textContent = '—';
+  document.getElementById('posture-badge').className = 'badge-neutral';
+  document.getElementById('alert-overlay').style.display = 'none';
+  ['m-slouch','m-head','m-shoulder','m-overall'].forEach(id => { document.getElementById(id).textContent = '—'; document.getElementById(id).style.color = ''; });
+  baseline = null; frameCount = 0; goodFrames = 0; badFrames = 0;
+}
+
+window.addEventListener('resize', resizeCanvas);
+</script>
