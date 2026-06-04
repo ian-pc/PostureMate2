@@ -221,7 +221,8 @@
       video.srcObject = stream;
       await video.play();
     } catch(e) {
-      document.getElementById('status-text').textContent = 'Camera permission denied — please allow and reload';
+      console.error('Camera error:', e.name, e.message);
+      document.getElementById('status-text').textContent = `Camera error: ${e.name} — ${e.message}`;
       return;
     }
 

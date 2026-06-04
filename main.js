@@ -19,6 +19,14 @@ function createWindow() {
     },
   });
 
+  mainWindow.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'media');
+  });
+
+  mainWindow.webContents.session.setPermissionCheckHandler((_webContents, permission) => {
+    return permission === 'media';
+  });
+
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
   mainWindow.on('close', (e) => {

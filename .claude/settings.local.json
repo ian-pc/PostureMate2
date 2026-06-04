@@ -4,7 +4,12 @@
       "PowerShell(New-Item *)",
       "PowerShell(cd \"C:\\\\Users\\\\ianpc\\\\Desktop\\\\Posturemate2\"; $env:ELECTRON_GET_USE_PROXY=\"\"; $env:GLOBAL_AGENT_HTTPS_PROXY=\"\"; node node_modules/@electron/get/dist/cli.js 2>&1 | Select-Object -First 10; npx electron --version 2>&1)",
       "PowerShell(node \"C:\\\\Users\\\\ianpc\\\\Desktop\\\\Posturemate2\\\\_extract.js\"; Write-Output \"exit: $LASTEXITCODE\")",
-      "PowerShell(Remove-Item *)"
+      "PowerShell(Remove-Item *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(node *)"
     ]
   }
 }
